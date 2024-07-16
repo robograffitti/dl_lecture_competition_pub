@@ -13,6 +13,19 @@ pip install -r requirements.txt
 docker build -t <イメージ名> .
 docker run -it -v $PWD:/workspace -w /workspace <イメージ名> bash
 ```
+### 自分の環境
+```bash
+# 以下すべてクローンしたリポジトリ内で実行することが前提であることに留意
+docker build -t vqa-0.0.0
+docker run -it -d --rm --gpus all --name vqa_yoshimaru -v $PWD:/workspace -w /workspace vqa-0.0.0 bash
+docker exec -it vqa_yoshimaru bash
+docker stop vqa_yoshimaru
+```
+- GPUの確認
+- https://docs.docker.jp/engine/reference/commandline/run.html
+```bash
+docker run -it --rm --gpus all ubuntu nvidia-smi
+```
 
 ## ベースラインモデルを動かす
 ### データのダウンロード
