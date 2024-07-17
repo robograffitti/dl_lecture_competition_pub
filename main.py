@@ -144,10 +144,10 @@ class VQADataset(torch.utils.data.Dataset):
             answers = [self.answer2idx[process_text(answer["answer"])] for answer in self.df["answers"][idx]]
             mode_answer_idx = mode(answers)  # 最頻値を取得（正解ラベル）
 
-            return image, torch.Tensor(question), torch.Tensor(answers), int(mode_answer_idx)
+            return image, torch.LongTensor(question), torch.Tensor(answers), int(mode_answer_idx)
 
         else:
-            return image, torch.Tensor(question)
+            return image, torch.LongTensor(question)
 
     def __len__(self):
         return len(self.df)
@@ -309,7 +309,7 @@ class VQAModel(nn.Module):
         # attention_mask = question['attention_mask'].to(image.device)
         # input_ids = torch.tensor(question)
         # question_feature = self.model(input_ids)
-        question_feature = self.model(question).type(torch.LongTensor)
+        question_feature = self.model(question)# .type(torch.LongTensor)
 
         # question_feature = self.text_encoder(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state # BERT
         # question_feature = question_feature.mean(dim=1)
