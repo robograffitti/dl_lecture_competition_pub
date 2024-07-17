@@ -70,6 +70,10 @@ class VQADataset(torch.utils.data.Dataset):
         self.df = pandas.read_json(df_path)  # 画像ファイルのパス，question, answerを持つDataFrame
         self.answer = answer
 
+        # tokenizer
+        model_name = 'bert-base-uncased'
+        self.tokenizer = BertTokenizer.from_pretrained(model_name)
+
         # question / answerの辞書を作成
         self.question2idx = {}
         self.answer2idx = {}
@@ -132,7 +136,8 @@ class VQADataset(torch.utils.data.Dataset):
         image = Image.open(f"{self.image_dir}/{self.df['image'][idx]}")
         image = self.transform(image)
 
-        question = process_text(self.df["question"][idx])
+        q_length = len(self.idx2question) + 1
+        question = self.tokenizer.encode(process_text(self.df["question"][idx]), max_length=q_length, padding="max_length", truncation=True, add_special_tokens=True)
 
         if self.answer:
             answers = [self.answer2idx[process_text(answer["answer"])] for answer in self.df["answers"][idx]]
@@ -299,8 +304,8 @@ class VQAModel(nn.Module):
 
     def forward(self, image, question):
         question_tokens = self.tokenizer(question, return_tensors='pt', padding=True, truncation=True)
-        input_ids = question_tokens['input_ids'] # .to(image.device)
-        attention_mask = question_tokens['attention_mask'] # .to(image.device)
+        input_ids = question_tokens['input_ids'].to(image.device)
+        attention_mask = question_tokens['attention_mask'].to(image.device)
 
         image_feature = self.resnet(image)  # 画像の特徴量
         question_feature = self.text_encoder(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state # BERT
@@ -322,9 +327,8 @@ def train(model, dataloader, optimizer, criterion, device):
 
     start = time.time()
     for image, question, answers, mode_answer in dataloader:
-        image, answer, mode_answer = \
-            image.to(device, non_blocking=True), answers.to(device, non_blocking=True), mode_answer.to(device, non_blocking=True)
-            # image.to(device, non_blocking=True), question.to(device, non_blocking=True), answers.to(device, non_blocking=True), mode_answer.to(device, non_blocking=True)
+        image, question, answer, mode_answer = \
+            image.to(device), question.to(device), answers.to(device), mode_answer.to(device)
 
         pred = model(image, question)
         loss = criterion(pred, mode_answer.squeeze())
