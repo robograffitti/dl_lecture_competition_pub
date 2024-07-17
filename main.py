@@ -159,13 +159,13 @@ class VQADataset(torch.utils.data.Dataset):
             answers = [self.answer2idx[process_text(answer["answer"])] for answer in self.df["answers"][idx]]
             mode_answer_idx = mode(answers)  # 最頻値を取得（正解ラベル）
 
-            return image, torch.t(torch.Tensor(question)), torch.Tensor(answers), int(mode_answer_idx)
-            # return image, torch.Tensor(question), torch.Tensor(answers), int(mode_answer_idx)
+            # return image, torch.t(torch.Tensor(question)), torch.Tensor(answers), int(mode_answer_idx)
+            return image, torch.Tensor(question), torch.Tensor(answers), int(mode_answer_idx)
             # return image, question, torch.Tensor(answers), int(mode_answer_idx)
 
         else:
-            return image, torch.t(torch.Tensor(question))
-            # return image, torch.Tensor(question)
+            # return image, torch.t(torch.Tensor(question))
+            return image, torch.Tensor(question)
             # return image, question
 
     def __len__(self):
