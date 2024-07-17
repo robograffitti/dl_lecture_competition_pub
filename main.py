@@ -306,8 +306,8 @@ class VQAModel(nn.Module):
 
     def forward(self, image, question):
         # question_tokens = self.tokenizer(question, return_tensors='pt', padding=True, truncation=True) # 最初からTensorで来るので不要
-        input_ids = question['input_ids'].to(image.device)
-        attention_mask = question['attention_mask'].to(image.device)
+        input_ids = question['input_ids']# .to(image.device)
+        attention_mask = question['attention_mask']# .to(image.device)
         # question_feature = self.model(question)# .type(torch.LongTensor)
         question_feature = self.model(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state # BERT
         question_feature = question_feature.mean(dim=1)
