@@ -11,7 +11,7 @@ import torch.nn as nn
 import torchvision
 from torchvision import transforms
 
-from transformers import BertTokenizer
+from transformers import BertTokenizer, BertModel
 
 def set_seed(seed):
     random.seed(seed)
@@ -69,10 +69,6 @@ class VQADataset(torch.utils.data.Dataset):
         self.image_dir = image_dir  # 画像ファイルのディレクトリ
         self.df = pandas.read_json(df_path)  # 画像ファイルのパス，question, answerを持つDataFrame
         self.answer = answer
-
-        # tokenizer
-        model_name = 'bert-base-uncased'
-        self.tokenizer = BertTokenizer.from_pretrained(model_name)
 
         # question / answerの辞書を作成
         self.question2idx = {}
@@ -136,40 +132,16 @@ class VQADataset(torch.utils.data.Dataset):
         image = Image.open(f"{self.image_dir}/{self.df['image'][idx]}")
         image = self.transform(image)
 
-        # 質問文の前処理（工夫の例から追加）
-        # q = process_text(self.df["question"][idx])
-        # question_words = q.split()
-
-        # tokenize question 
-        # print(len(self.idx2question))
-        # question = self.tokenizer(process_text(self.df["question"][idx]), max_length=512, padding="max_length", truncation=True, return_tensors='pt')
-        q_length = len(self.idx2question) + 1
-        question = self.tokenizer.encode(process_text(self.df["question"][idx]), max_length=q_length, padding="max_length", truncation=True, add_special_tokens=True)
-        # print(len(question)) # 512
-        # print(type(question))
-        # question = self.tokenizer.encode(process_text(self.df["question"][idx]))
-
-        # question = np.zeros(len(self.idx2question) + 1)  # 未知語用の要素を追加
-        # question_words = self.df["question"][idx].split(" ")
-        # for word in question_words:
-        #     try:
-        #         question[self.question2idx[word]] = 1  # one-hot表現に変換
-        #     except KeyError:
-        #         question[-1] = 1  # 未知語
-        # print(len(question)) # 3909
+        question = process_text(self.df["question"][idx])
 
         if self.answer:
             answers = [self.answer2idx[process_text(answer["answer"])] for answer in self.df["answers"][idx]]
             mode_answer_idx = mode(answers)  # 最頻値を取得（正解ラベル）
 
-            # return image, torch.t(torch.Tensor(question)), torch.Tensor(answers), int(mode_answer_idx)
             return image, torch.Tensor(question), torch.Tensor(answers), int(mode_answer_idx)
-            # return image, question, torch.Tensor(answers), int(mode_answer_idx)
 
         else:
-            # return image, torch.t(torch.Tensor(question))
             return image, torch.Tensor(question)
-            # return image, question
 
     def __len__(self):
         return len(self.df)
@@ -315,7 +287,9 @@ class VQAModel(nn.Module):
     def __init__(self, vocab_size: int, n_answer: int):
         super().__init__()
         self.resnet = ResNet18()
-        self.text_encoder = nn.Linear(vocab_size, 512)
+        model_name = 'bert-base-uncased'
+        self.text_encoder = BertModel.from_pretrained(model_name)
+        self.tokenizer = BertTokenizer.from_pretrained(model_name)
 
         self.fc = nn.Sequential(
             nn.Linear(1024, 512),
@@ -324,8 +298,13 @@ class VQAModel(nn.Module):
         )
 
     def forward(self, image, question):
+        question_tokens = self.tokenizer(question, return_tensors='pt', padding=True, truncation=True)
+        input_ids = question_tokens['input_ids'].to(image.device)
+        attention_mask = question_tokens['attention_mask'].to(image.device)
+
         image_feature = self.resnet(image)  # 画像の特徴量
-        question_feature = self.text_encoder(question)  # テキストの特徴量
+        question_feature = self.text_encoder(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state # BERT
+        question_feature = question_feature.mean(dim=1)
 
         x = torch.cat([image_feature, question_feature], dim=1)
         x = self.fc(x)
