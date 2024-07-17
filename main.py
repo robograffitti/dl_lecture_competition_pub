@@ -143,7 +143,8 @@ class VQADataset(torch.utils.data.Dataset):
         # tokenize question 
         # print(len(self.idx2question))
         # question = self.tokenizer(process_text(self.df["question"][idx]), max_length=512, padding="max_length", truncation=True, return_tensors='pt')
-        # question = self.tokenizer.encode(process_text(self.df["question"][idx]), max_length=512, padding="max_length", truncation=True, add_special_tokens=True)
+        question = self.tokenizer.encode(process_text(self.df["question"][idx]), max_length=512, padding="max_length", truncation=True, add_special_tokens=True)
+        print(len(question))
         # print(type(question))
         # question = self.tokenizer.encode(process_text(self.df["question"][idx]))
 
@@ -155,7 +156,7 @@ class VQADataset(torch.utils.data.Dataset):
             except KeyError:
                 question[-1] = 1  # 未知語
 
-        print(len(question))
+        # print(len(question))
 
         if self.answer:
             answers = [self.answer2idx[process_text(answer["answer"])] for answer in self.df["answers"][idx]]
