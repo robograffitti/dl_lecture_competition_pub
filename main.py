@@ -293,7 +293,7 @@ class VQAModel(nn.Module):
         super().__init__()
         self.resnet = ResNet18()
         model_name = 'bert-base-uncased'
-        self.text_encoder = BertModel.from_pretrained(model_name)
+        self.model = BertModel.from_pretrained(model_name)
         self.tokenizer = BertTokenizer.from_pretrained(model_name)
 
         self.fc = nn.Sequential(
@@ -303,13 +303,17 @@ class VQAModel(nn.Module):
         )
 
     def forward(self, image, question):
-        # question_tokens = self.tokenizer(question, return_tensors='pt', padding=True, truncation=True) # 既にトークン化済のため不要
-        input_ids = question['input_ids'].to(image.device)
-        attention_mask = question['attention_mask'].to(image.device)
+        # question_tokens = self.tokenizer(question, return_tensors='pt', padding=True, truncation=True)
+        # input_ids = question['input_ids'].to(image.device)
+        # attention_mask = question['attention_mask'].to(image.device)
+        # input_ids = torch.tensor(question)
+        # question_feature = self.model(input_ids)
+        question_feature = self.model(question)
+
+        # question_feature = self.text_encoder(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state # BERT
+        # question_feature = question_feature.mean(dim=1)
 
         image_feature = self.resnet(image)  # 画像の特徴量
-        question_feature = self.text_encoder(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state # BERT
-        question_feature = question_feature.mean(dim=1)
 
         x = torch.cat([image_feature, question_feature], dim=1)
         x = self.fc(x)
