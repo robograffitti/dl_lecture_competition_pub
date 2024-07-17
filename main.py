@@ -71,23 +71,23 @@ class VQADataset(torch.utils.data.Dataset):
         self.answer = answer
 
         # tokenizer
-        model_name = 'bert-base-uncased'
-        self.tokenizer = BertTokenizer.from_pretrained(model_name)
+        # model_name = 'bert-base-uncased'
+        # self.tokenizer = BertTokenizer.from_pretrained(model_name)
 
         # question / answerの辞書を作成
-        self.question2idx = {}
+        # self.question2idx = {}
         self.answer2idx = {}
-        self.idx2question = {}
+        # self.idx2question = {}
         self.idx2answer = {}
 
         # 質問文に含まれる単語を辞書に追加
-        for question in self.df["question"]:
-            question = process_text(question)
-            words = question.split(" ")
-            for word in words:
-                if word not in self.question2idx:
-                    self.question2idx[word] = len(self.question2idx)
-        self.idx2question = {v: k for k, v in self.question2idx.items()}  # 逆変換用の辞書(question)
+        # for question in self.df["question"]:
+        #     question = process_text(question)
+        #     words = question.split(" ")
+        #     for word in words:
+        #         if word not in self.question2idx:
+        #             self.question2idx[word] = len(self.question2idx)
+        # self.idx2question = {v: k for k, v in self.question2idx.items()}  # 逆変換用の辞書(question)
 
         if self.answer:
             # 回答に含まれる単語を辞書に追加
@@ -108,9 +108,9 @@ class VQADataset(torch.utils.data.Dataset):
         dataset : Dataset
             訓練データのDataset
         """
-        self.question2idx = dataset.question2idx
+        # self.question2idx = dataset.question2idx
         self.answer2idx = dataset.answer2idx
-        self.idx2question = dataset.idx2question
+        # self.idx2question = dataset.idx2question
         self.idx2answer = dataset.idx2answer
 
     def __getitem__(self, idx):
@@ -136,19 +136,24 @@ class VQADataset(torch.utils.data.Dataset):
         image = Image.open(f"{self.image_dir}/{self.df['image'][idx]}")
         image = self.transform(image)
 
-        q_length = len(self.idx2question) + 1
+        # q_length = len(self.idx2question) + 1
         # q_length = 512
-        question = self.tokenizer.encode(process_text(self.df["question"][idx]), max_length=q_length, padding="max_length", truncation=True, add_special_tokens=True)
+        # question = self.tokenizer.encode(process_text(self.df["question"][idx]), max_length=q_length, padding="max_length", truncation=True, add_special_tokens=True)
+        
+        # unnecesarry?s
+        question = process_text(self.df["question"][idx]) 
 
         if self.answer:
             answers = [self.answer2idx[process_text(answer["answer"])] for answer in self.df["answers"][idx]]
             mode_answer_idx = mode(answers)  # 最頻値を取得（正解ラベル）
 
-            return image, torch.Tensor(question), torch.Tensor(answers), int(mode_answer_idx)
+            # return image, torch.Tensor(question), torch.Tensor(answers), int(mode_answer_idx)
+            return image, question, torch.Tensor(answers), int(mode_answer_idx)
             # return image, torch.LongTensor(question), torch.Tensor(answers), int(mode_answer_idx)
 
         else:
-            return image, torch.Tensor(question)
+            # return image, torch.Tensor(question)
+            return image, question
             # return image, torch.LongTensor(question)
 
     def __len__(self):
@@ -301,22 +306,27 @@ class VQAModel(nn.Module):
         self.text_encoder = model.cuda()
 
         self.fc = nn.Sequential(
-            nn.Linear(1024, 512),
+            nn.Linear(768 + 512, 512), # BERT output size : 768, 768 + 512 = 1280
             nn.ReLU(inplace=True),
             nn.Linear(512, n_answer)
         )
 
     def forward(self, image, question):
+        image_feature = self.resnet(image)  # 画像の特徴量
+
         # question_tokens = self.tokenizer(question, return_tensors='pt', padding=True, truncation=True) # 最初からTensorで来るので不要
         # input_ids = question['input_ids']# .to(image.device)
         # attention_mask = question['attention_mask']# .to(image.device)
         # question_feature = self.model(question)# .type(torch.LongTensor)
-        attention_mask = [1] * len(question)
-        question = question.to(torch.int64)
-        question_feature = self.text_encoder(input_ids=question, attention_mask=attention_mask).last_hidden_state # BERT
-        question_feature = question_feature.mean(dim=1)
+        # attention_mask = [1] * len(question)
+        # question = question.to(torch.int64)
+        # question_feature = self.text_encoder(input_ids=question, attention_mask=attention_mask).last_hidden_state # BERT
+        # question_feature = question_feature.mean(dim=1)
 
-        image_feature = self.resnet(image)  # 画像の特徴量
+        inputs = self.tokenizer(question, return_tensors="pt", padding=True, truncation=True, max_length=512)
+        inputs = {k: v.to(image.device) for k, v in inputs.items()}
+        outputs = self.bert(**inputs)
+        question_feature = outputs.last_hidden_state[:, 0, :]
 
         x = torch.cat([image_feature, question_feature], dim=1)
         x = self.fc(x)
@@ -334,9 +344,12 @@ def train(model, dataloader, optimizer, criterion, device):
 
     start = time.time()
     for image, question, answers, mode_answer in dataloader:
-        image, question, answer, mode_answer = \
-            image.to(device), question.to(device), answers.to(device), mode_answer.to(device)
+        # image, question, answer, mode_answer = \
+        #     image.to(device), question.to(device), answers.to(device), mode_answer.to(device)
+        image, answer, mode_answer = \
+            image.to(device), answers.to(device), mode_answer.to(device)
 
+        # with torch.amp.autocast():
         pred = model(image, question)
         loss = criterion(pred, mode_answer.squeeze())
 
@@ -360,8 +373,10 @@ def eval(model, dataloader, optimizer, criterion, device):
 
     start = time.time()
     for image, question, answers, mode_answer in dataloader:
-        image, question, answer, mode_answer = \
-            image.to(device), question.to(device), answers.to(device), mode_answer.to(device)
+        # image, question, answer, mode_answer = \
+        #     image.to(device), question.to(device), answers.to(device), mode_answer.to(device)
+        image, answer, mode_answer = \
+            image.to(device), answers.to(device), mode_answer.to(device)
 
         pred = model(image, question)
         loss = criterion(pred, mode_answer.squeeze())
