@@ -11,7 +11,7 @@ import torch.nn as nn
 import torchvision
 from torchvision import transforms
 
-# from transformers import BertTokenizer
+from transformers import BertTokenizer
 
 def set_seed(seed):
     random.seed(seed)
@@ -69,6 +69,10 @@ class VQADataset(torch.utils.data.Dataset):
         self.image_dir = image_dir  # 画像ファイルのディレクトリ
         self.df = pandas.read_json(df_path)  # 画像ファイルのパス，question, answerを持つDataFrame
         self.answer = answer
+
+        # tokenizer
+        model_name = 'bert-base-uncased'
+        self.tokenizer = BertTokenizer.from_pretrained(model_name)
 
         # question / answerの辞書を作成
         self.question2idx = {}
@@ -133,20 +137,22 @@ class VQADataset(torch.utils.data.Dataset):
         image = self.transform(image)
 
         # 質問文の前処理（工夫の例から追加）
-        q = process_text(self.df["question"][idx])
-        question_words = q.split()
-        # question_words = [self.question2idx[word] for word in words]
-        # question = [self.question2idx[word] for word in self.df["question"][idx].split()]
-        # question = [self.question2idx[word] for word in process_text(question).split() for question in self.df["question"][idx]]
-        # question = self.question2idx[process_text(self.df["question"][idx])]
+        # q = process_text(self.df["question"][idx])
+        # question_words = q.split()
 
-        question = np.zeros(len(self.idx2question) + 1)  # 未知語用の要素を追加
-        # question_words = self.df["question"][idx].split(" ")
-        for word in question_words:
-            try:
-                question[self.question2idx[word]] = 1  # one-hot表現に変換
-            except KeyError:
-                question[-1] = 1  # 未知語
+        # tokenize question
+        # question = self.tokenizer(question_words, max_length=512, padding="max_length", truncation=True, return_tensors="pt")
+        question = process_text(self.df["question"][idx])
+        # token = self.tokenizer(question)
+        input_ids = self.tokenizer(question)
+
+        # question = np.zeros(len(self.idx2question) + 1)  # 未知語用の要素を追加
+        # # question_words = self.df["question"][idx].split(" ")
+        # for word in question_words:
+        #     try:
+        #         question[self.question2idx[word]] = 1  # one-hot表現に変換
+        #     except KeyError:
+        #         question[-1] = 1  # 未知語
 
         if self.answer:
             answers = [self.answer2idx[process_text(answer["answer"])] for answer in self.df["answers"][idx]]
