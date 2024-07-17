@@ -11,6 +11,7 @@ import torch.nn as nn
 import torchvision
 from torchvision import transforms
 
+# from transformers import BertTokenizer
 
 def set_seed(seed):
     random.seed(seed)
@@ -135,13 +136,13 @@ class VQADataset(torch.utils.data.Dataset):
         q = self.df["question"][idx]
         q = process_text(q)
         words = q.split()
-        question = [self.question2idx[word] for word in words]
+        question_words = [self.question2idx[word] for word in words]
         # question = [self.question2idx[word] for word in self.df["question"][idx].split()]
         # question = [self.question2idx[word] for word in process_text(question).split() for question in self.df["question"][idx]]
         # question = self.question2idx[process_text(self.df["question"][idx])]
 
         question = np.zeros(len(self.idx2question) + 1)  # 未知語用の要素を追加
-        question_words = self.df["question"][idx].split(" ")
+        # question_words = self.df["question"][idx].split(" ")
         for word in question_words:
             try:
                 question[self.question2idx[word]] = 1  # one-hot表現に変換
