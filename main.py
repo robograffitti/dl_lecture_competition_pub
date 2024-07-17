@@ -11,7 +11,7 @@ import torch.nn as nn
 import torchvision
 from torchvision import transforms
 
-from transformers import BertTokenizer
+# from transformers import BertTokenizer
 
 def set_seed(seed):
     random.seed(seed)
