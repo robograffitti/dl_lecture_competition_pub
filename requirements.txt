@@ -2,5 +2,5 @@ torch
 torchvision
 torchaudio
 pandas
-transformers==4.20.0
+transformers
 datasets
