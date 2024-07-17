@@ -142,7 +142,7 @@ class VQADataset(torch.utils.data.Dataset):
 
         # tokenize question 
         # question = self.tokenizer(process_text(self.df["question"][idx]), max_length=512, padding="max_length", truncation=True, return_tensors='pt')
-        question = self.tokenizer(process_text(self.df["question"][idx]), max_length=512, padding=True, truncation=True, return_tensors='pt')
+        question = self.tokenizer.encode(process_text(self.df["question"][idx]), max_length=512, padding="max_length", truncation=True, add_special_tokens=True)
         # print(type(question))
         # question = self.tokenizer.encode(process_text(self.df["question"][idx]))
 
@@ -158,12 +158,12 @@ class VQADataset(torch.utils.data.Dataset):
             answers = [self.answer2idx[process_text(answer["answer"])] for answer in self.df["answers"][idx]]
             mode_answer_idx = mode(answers)  # 最頻値を取得（正解ラベル）
 
-            # return image, torch.Tensor(question), torch.Tensor(answers), int(mode_answer_idx)
-            return image, question, torch.Tensor(answers), int(mode_answer_idx)
+            return image, torch.Tensor(question), torch.Tensor(answers), int(mode_answer_idx)
+            # return image, question, torch.Tensor(answers), int(mode_answer_idx)
 
         else:
-            # return image, torch.Tensor(question)
-            return image, question
+            return image, torch.Tensor(question)
+            # return image, question
 
     def __len__(self):
         return len(self.df)
