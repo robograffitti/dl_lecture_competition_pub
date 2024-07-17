@@ -141,8 +141,7 @@ class VQADataset(torch.utils.data.Dataset):
         # question_words = q.split()
 
         # tokenize question
-        question = self.tokenizer(process_text(self.df["question"][idx]), max_length=512, padding="max_length", truncation=True, return_tensors='pt')
-        print(type(question))
+        question = self.tokenizer(process_text(self.df["question"][idx]), max_length=512, padding="max_length", truncation=True, return_tensors='pt').question
         # question = self.tokenizer.encode(process_text(self.df["question"][idx]))
 
         # question = np.zeros(len(self.idx2question) + 1)  # 未知語用の要素を追加
