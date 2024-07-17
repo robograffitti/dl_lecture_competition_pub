@@ -303,9 +303,9 @@ class VQAModel(nn.Module):
         )
 
     def forward(self, image, question):
-        question_tokens = self.tokenizer(question, return_tensors='pt', padding=True, truncation=True)
-        input_ids = question_tokens['input_ids'].to(image.device)
-        attention_mask = question_tokens['attention_mask'].to(image.device)
+        # question_tokens = self.tokenizer(question, return_tensors='pt', padding=True, truncation=True) # 既にトークン化済のため不要
+        input_ids = question['input_ids'].to(image.device)
+        attention_mask = question['attention_mask'].to(image.device)
 
         image_feature = self.resnet(image)  # 画像の特徴量
         question_feature = self.text_encoder(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state # BERT
