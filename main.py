@@ -322,8 +322,9 @@ def train(model, dataloader, optimizer, criterion, device):
 
     start = time.time()
     for image, question, answers, mode_answer in dataloader:
-        image, question, answer, mode_answer = \
-            image.to(device), question.to(device), answers.to(device), mode_answer.to(device)
+        image, answer, mode_answer = \
+            image.to(device, non_blocking=True), answers.to(device, non_blocking=True), mode_answer.to(device, non_blocking=True)
+            # image.to(device, non_blocking=True), question.to(device, non_blocking=True), answers.to(device, non_blocking=True), mode_answer.to(device, non_blocking=True)
 
         pred = model(image, question)
         loss = criterion(pred, mode_answer.squeeze())
