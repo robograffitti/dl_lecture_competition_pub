@@ -143,20 +143,19 @@ class VQADataset(torch.utils.data.Dataset):
         # tokenize question 
         # print(len(self.idx2question))
         # question = self.tokenizer(process_text(self.df["question"][idx]), max_length=512, padding="max_length", truncation=True, return_tensors='pt')
-        question = self.tokenizer.encode(process_text(self.df["question"][idx]), max_length=512, padding="max_length", truncation=True, add_special_tokens=True)
-        print(len(question))
+        question = self.tokenizer.encode(process_text(self.df["question"][idx]), max_length=3909, padding="max_length", truncation=True, add_special_tokens=True)
+        print(len(question)) # 512
         # print(type(question))
         # question = self.tokenizer.encode(process_text(self.df["question"][idx]))
 
-        question = np.zeros(len(self.idx2question) + 1)  # 未知語用の要素を追加
-        question_words = self.df["question"][idx].split(" ")
-        for word in question_words:
-            try:
-                question[self.question2idx[word]] = 1  # one-hot表現に変換
-            except KeyError:
-                question[-1] = 1  # 未知語
-
-        # print(len(question))
+        # question = np.zeros(len(self.idx2question) + 1)  # 未知語用の要素を追加
+        # question_words = self.df["question"][idx].split(" ")
+        # for word in question_words:
+        #     try:
+        #         question[self.question2idx[word]] = 1  # one-hot表現に変換
+        #     except KeyError:
+        #         question[-1] = 1  # 未知語
+        # print(len(question)) # 3909
 
         if self.answer:
             answers = [self.answer2idx[process_text(answer["answer"])] for answer in self.df["answers"][idx]]
