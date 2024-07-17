@@ -312,6 +312,7 @@ class VQAModel(nn.Module):
         # attention_mask = question['attention_mask']# .to(image.device)
         # question_feature = self.model(question)# .type(torch.LongTensor)
         attention_mask = [1] * len(question)
+        question = question.to(torch.int64)
         question_feature = self.text_encoder(input_ids=question, attention_mask=attention_mask).last_hidden_state # BERT
         question_feature = question_feature.mean(dim=1)
 
