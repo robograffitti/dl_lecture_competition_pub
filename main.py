@@ -325,7 +325,7 @@ class VQAModel(nn.Module):
 
         inputs = self.tokenizer(question, return_tensors="pt", padding=True, truncation=True, max_length=512)
         inputs = {k: v.to(image.device) for k, v in inputs.items()}
-        outputs = self.bert(**inputs)
+        outputs = self.text_encoder(**inputs)
         question_feature = outputs.last_hidden_state[:, 0, :]
 
         x = torch.cat([image_feature, question_feature], dim=1)
