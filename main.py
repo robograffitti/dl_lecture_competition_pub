@@ -130,6 +130,10 @@ class VQADataset(torch.utils.data.Dataset):
         """
         image = Image.open(f"{self.image_dir}/{self.df['image'][idx]}")
         image = self.transform(image)
+
+    # 質問文の前処理（工夫の例から追加）
+        question = [self.question2idx[process_text(question)] for question in self.df["question"][idx]]
+
         question = np.zeros(len(self.idx2question) + 1)  # 未知語用の要素を追加
         question_words = self.df["question"][idx].split(" ")
         for word in question_words:
