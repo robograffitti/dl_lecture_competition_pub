@@ -144,10 +144,10 @@ class VQADataset(torch.utils.data.Dataset):
             answers = [self.answer2idx[process_text(answer["answer"])] for answer in self.df["answers"][idx]]
             mode_answer_idx = mode(answers)  # 最頻値を取得（正解ラベル）
 
-            return image, torch.LongTensor(question), torch.Tensor(answers), int(mode_answer_idx)
+            return image, torch.Tensor(question), torch.Tensor(answers), int(mode_answer_idx)
 
         else:
-            return image, torch.LongTensor(question)
+            return image, torch.Tensor(question)
 
     def __len__(self):
         return len(self.df)
@@ -294,8 +294,9 @@ class VQAModel(nn.Module):
         super().__init__()
         self.resnet = ResNet18()
         model_name = 'bert-base-uncased'
-        self.model = BertModel.from_pretrained(model_name)
         self.tokenizer = BertTokenizer.from_pretrained(model_name)
+        model = BertModel.from_pretrained(model_name)
+        self.model = model.cuda()
 
         self.fc = nn.Sequential(
             nn.Linear(1024, 512),
@@ -304,15 +305,12 @@ class VQAModel(nn.Module):
         )
 
     def forward(self, image, question):
-        # question_tokens = self.tokenizer(question, return_tensors='pt', padding=True, truncation=True)
-        # input_ids = question['input_ids'].to(image.device)
-        # attention_mask = question['attention_mask'].to(image.device)
-        # input_ids = torch.tensor(question)
-        # question_feature = self.model(input_ids)
-        question_feature = self.model(question)# .type(torch.LongTensor)
-
-        # question_feature = self.text_encoder(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state # BERT
-        # question_feature = question_feature.mean(dim=1)
+        # question_tokens = self.tokenizer(question, return_tensors='pt', padding=True, truncation=True) # 最初からTensorで来るので不要
+        input_ids = question['input_ids'].to(image.device)
+        attention_mask = question['attention_mask'].to(image.device)
+        # question_feature = self.model(question)# .type(torch.LongTensor)
+        question_feature = self.model(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state # BERT
+        question_feature = question_feature.mean(dim=1)
 
         image_feature = self.resnet(image)  # 画像の特徴量
 
