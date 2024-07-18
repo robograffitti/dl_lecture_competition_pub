@@ -415,8 +415,9 @@ def main():
     # train_ds_rand_rot = VQADataset(df_path="./data/train.json", image_dir="./data/train", transform=tf_rand_rot)
     # test_ds_rand_rot = VQADataset(df_path="./data/valid.json", image_dir="./data/valid", transform=tf_rand_rot, answer=False)
     
-    train_dataset = torch.utils.data.ConcatDataset([train_ds_resize, train_ds_rand_rot]) 
-    test_dataset = torch.utils.data.ConcatDataset([test_ds_resize, test_ds_rand_rot]) 
+    train_dataset = train_ds_resize + train_ds_rand_rot 
+    test_dataset = test_ds_resize, test_ds_rand_rot
+    # test_dataset = torch.utils.data.ConcatDataset([test_ds_resize, test_ds_rand_rot]) 
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
