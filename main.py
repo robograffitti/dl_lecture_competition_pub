@@ -349,9 +349,9 @@ def train(model, dataloader, optimizer, criterion, device):
         image, answer, mode_answer = \
             image.to(device), answers.to(device), mode_answer.to(device)
 
-        # with torch.amp.autocast():
-        pred = model(image, question)
-        loss = criterion(pred, mode_answer.squeeze())
+        with torch.amp.autocast():
+            pred = model(image, question)
+            loss = criterion(pred, mode_answer.squeeze())
 
         optimizer.zero_grad()
         loss.backward()
@@ -378,8 +378,9 @@ def eval(model, dataloader, optimizer, criterion, device):
         image, answer, mode_answer = \
             image.to(device), answers.to(device), mode_answer.to(device)
 
-        pred = model(image, question)
-        loss = criterion(pred, mode_answer.squeeze())
+        with torch.amp.autocast():
+            pred = model(image, question)
+            loss = criterion(pred, mode_answer.squeeze())
 
         total_loss += loss.item()
         total_acc += VQA_criterion(pred.argmax(1), answers)  # VQA accuracy
@@ -426,9 +427,10 @@ def main():
     model.eval()
     submission = []
     for image, question in test_loader:
-        # image, question = image.to(device), question.to(device)
-        pred = model(image, question)
-        pred = pred.argmax(1).cpu().item()
+        image, question = image.to(device), question.to(device)
+        with torch.amp.autocast():
+            pred = model(image, question)
+            pred = pred.argmax(1).cpu().item()
         submission.append(pred)
 
     submission = [train_dataset.idx2answer[id] for id in submission]
