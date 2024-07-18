@@ -349,7 +349,7 @@ def train(model, dataloader, optimizer, criterion, device):
         image, answer, mode_answer = \
             image.to(device), answers.to(device), mode_answer.to(device)
 
-        with torch.amp.autocast():
+        with torch.amp.autocast('cuda'):
             pred = model(image, question)
             loss = criterion(pred, mode_answer.squeeze())
 
@@ -378,7 +378,7 @@ def eval(model, dataloader, optimizer, criterion, device):
         image, answer, mode_answer = \
             image.to(device), answers.to(device), mode_answer.to(device)
 
-        with torch.amp.autocast():
+        with torch.amp.autocast('cuda'):
             pred = model(image, question)
             loss = criterion(pred, mode_answer.squeeze())
 
@@ -428,7 +428,7 @@ def main():
     submission = []
     for image, question in test_loader:
         image, question = image.to(device), question.to(device)
-        with torch.amp.autocast():
+        with torch.amp.autocast('cuda'):
             pred = model(image, question)
             pred = pred.argmax(1).cpu().item()
         submission.append(pred)
