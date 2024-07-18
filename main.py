@@ -404,10 +404,12 @@ def main():
     # test_dataset.update_dict(train_dataset)
     train_ds_resize = VQADataset(df_path="./data/train.json", image_dir="./data/train", transform=tf_resize)
     test_ds_resize = VQADataset(df_path="./data/valid.json", image_dir="./data/valid", transform=tf_resize, answer=False)
+    test_ds_resize.update_dict(train_ds_resize)
 
     tf_rand_rot = transforms.Compose([transforms.RandomRotation(degrees=(-180, 180)), transforms.ToTensor()])
     train_ds_rand_rot = VQADataset(df_path="./data/train.json", image_dir="./data/train", transform=tf_rand_rot)
     test_ds_rand_rot = VQADataset(df_path="./data/valid.json", image_dir="./data/valid", transform=tf_rand_rot, answer=False)
+    test_ds_rand_rot.update_dict(train_ds_rand_rot)
 
     # tf_rand_rot = transforms.Compose([transforms.RandomRotation(degrees=(-180, 180)), transforms.ToTensor()])
     # train_ds_rand_rot = VQADataset(df_path="./data/train.json", image_dir="./data/train", transform=tf_rand_rot)
@@ -415,7 +417,6 @@ def main():
     
     train_dataset = torch.utils.data.ConcatDataset([train_ds_resize, train_ds_rand_rot]) 
     test_dataset = torch.utils.data.ConcatDataset([test_ds_resize, test_ds_rand_rot]) 
-    test_dataset.update_dict(train_dataset)
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
