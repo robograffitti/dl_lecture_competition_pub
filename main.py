@@ -395,12 +395,26 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # dataloader / model
-    transform = transforms.Compose([
+    tf_resize = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor()
     ])
-    train_dataset = VQADataset(df_path="./data/train.json", image_dir="./data/train", transform=transform)
-    test_dataset = VQADataset(df_path="./data/valid.json", image_dir="./data/valid", transform=transform, answer=False)
+    # train_dataset = VQADataset(df_path="./data/train.json", image_dir="./data/train", transform=transform)
+    # test_dataset = VQADataset(df_path="./data/valid.json", image_dir="./data/valid", transform=transform, answer=False)
+    # test_dataset.update_dict(train_dataset)
+    train_ds_resize = VQADataset(df_path="./data/train.json", image_dir="./data/train", transform=tf_resize)
+    test_ds_resize = VQADataset(df_path="./data/valid.json", image_dir="./data/valid", transform=tf_resize, answer=False)
+
+    tf_rand_rot = transforms.Compose([transforms.RandomRotation(degrees=(-180, 180)), transforms.ToTensor()])
+    train_ds_rand_rot = VQADataset(df_path="./data/train.json", image_dir="./data/train", transform=tf_rand_rot)
+    test_ds_rand_rot = VQADataset(df_path="./data/valid.json", image_dir="./data/valid", transform=tf_rand_rot, answer=False)
+
+    # tf_rand_rot = transforms.Compose([transforms.RandomRotation(degrees=(-180, 180)), transforms.ToTensor()])
+    # train_ds_rand_rot = VQADataset(df_path="./data/train.json", image_dir="./data/train", transform=tf_rand_rot)
+    # test_ds_rand_rot = VQADataset(df_path="./data/valid.json", image_dir="./data/valid", transform=tf_rand_rot, answer=False)
+    
+    train_dataset = torch.utils.data.ConcatDataset([train_ds_resize, train_ds_rand_rot]) 
+    test_dataset = torch.utils.data.ConcatDataset([test_ds_resize, test_ds_rand_rot]) 
     test_dataset.update_dict(train_dataset)
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True)
